@@ -101,6 +101,7 @@
             ,d3.autoType()).then(main)
 
     function main(data){
+
         let width = 1000
         let height= 1000
         let svg = d3.select('#canvas')
@@ -108,6 +109,8 @@
             .scale(1200).translate([width/2, 2*height/5])
         let geoJson = topojson.feature(data[0],data[0].objects.cb_2018_us_county_20m).features;
         let geo_generator = d3.geoPath().projection(projection);
+
+        console.log(geoJson)
 
         // Step 5: first load 2008 to 2016 data into dictionary
         let election_data = {}
@@ -124,9 +127,7 @@
             catch (error)
             {console.log(error)}})
 
-        console.log(election_data)
 
-        console.log(geoJson)
         let mapCanvas = svg.append('g')
         mapCanvas.selectAll('path')
             .data(geoJson)
@@ -155,9 +156,6 @@
                     .style("left",(mouseData.clientX+10).toString()+"px")
                     .style("top",(mouseData.clientY+10).toString()+"px")
             })
-
-
-
 
         svg.call(d3.zoom()
             .extent([[0,0],[1000,1000]])
