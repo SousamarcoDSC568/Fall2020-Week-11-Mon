@@ -5,11 +5,172 @@
     <title>Exercise US Election Map</title>
     <script src="https://d3js.org/d3.v6.min.js"></script>
     <script src="https://d3js.org/topojson.v2.min.js"></script>
+    <style>
+        .tooltipData{
+            font-size: small;
+        }
+        #tooltip{
+            opacity: 0;
+            background-color: #f5f3f0;
+            position: absolute;
+            font-family: sans-serif;
+            font-size: medium;
+            width: 160px;
+            height: 100px;
+        }
+
+        #caption{
+            margin: auto;
+            padding-top: 1%;
+            padding-bottom: 1%;
+            padding-left: 4%;
+            font-family: serif;
+            font-size: 20pt;
+        }
+        #container
+        {
+            width: 90vw;
+            height: 80vh;
+        }
+        #canvas
+        {
+            width: 90vw;
+            height: 80vh;
+            background-color: #fffefe;
+        }
+        path.path_geo{
+            stroke-width: .1px;
+            stroke: black;
+            fill-opacity: .8;
+        }
+        .gop{
+            fill: none;
+            stroke: #FF0000;
+            stroke-width: 4px;
+            stroke-opacity: .8;
+
+        }
+        .dems{
+            fill: none;
+            stroke: #0015BC;
+            stroke-width: 4px;
+            stroke-opacity: .8;
+        }
+        .county_name{
+            font-family: sans-serif;
+            font-size: medium;
+            color: dimgray;
+            font-weight: bold;
+
+        }
+    </style>
+
 
 
 
 </head>
 <body>
 
+<!-- these construct the title div, the canvas svg, and tooltip svg in the body-->
+
+<div id="caption">
+    US Election by State (2008 - 2020).
+</div>
+
+<div id="container">
+    <svg id="canvas" width="100vw" height="100vh" viewBox="0 0 1000 800">
+    </svg>
+</div>
+
+<div id="tooltip">
+    <svg id="svg_tooltop" width="100%" height="100%" viewBox="0 0 200 100">
+    </svg>
+</div>
+
 </body>
+<script>
+    //Respective colors
+    let dem_color = "#FF0000"
+    let gop_color = "#0015BC"
+
+    //Preparing to promise data:
+    //Source 1: Grouped sums (by state) for respective years
+    // Doesn't work when loading from data file for me. Used repo file instead.
+    let use_election_data_2020 = "https://raw.githubusercontent.com/SousamarcoDSC568/Fall2020-Week-11-Mon/main/Exercise/data/grouped2020.csv"
+    let use_election_data_2008_2016 = "https://raw.githubusercontent.com/SousamarcoDSC568/Fall2020-Week-11-Mon/main/Exercise/data/grouped2008_2016.csv"
+    // source 2: US Census Counties geojson (is NOT a topo)
+    let geojson = "https://raw.githubusercontent.com/SousamarcoDSC568/Fall2020-Week-11-Mon/main/Exercise/data/cb_2018_us_state_5m.json";
+
+    //promising the data
+    Promise.all(
+        [
+            d3.json(geojson),
+            d3.csv(use_election_data_2008_2016),
+            d3.csv(use_election_data_2020)]
+        ,d3.autoType()).then(main)
+
+    function main(data){
+        console.log(data[0])
+        console.log(data[1])
+        console.log(data[2])
+
+
+        let width = 1000
+        let height= 1000
+        let svg = d3.select('#canvas')
+        let projection = d3.geoAlbersUsa()
+            .scale(1200).translate([width/2, 2*height/5])
+        let geoJson = topojson.feature(data[0],data[0].objects.cb_2018_us_state_5m).features;
+        let geo_generator = d3.geoPath().projection(projection);
+
+
+        // Extracting data from our promised data and formatting into state objects with subsidiary lists
+        let election_data = {}
+        d3.map(data[1],function (d) {election_data[d.state_name] =
+            {   name: d.state_name,
+                totals: [+d.total_2008,+d.total_2012,+d.total_2016],
+                dems:[+d.dem_2008,+d.dem_2012,+d.dem_2016],
+                gop:[+d.gop_2008,+d.gop_2012,+d.gop_2016]}})
+        d3.map(data[2],function (d) {
+            try {
+                election_data[d.state_name]['totals'].push(+d.total_votes)
+                election_data[d.state_name]['dems'].push(+d.votes_dem)
+                election_data[d.state_name]['gop'].push(+d.votes_gop)}
+            catch (error)
+            {console.log(error)}})
+
+        console.log(election_data)
+
+
+
+        let mapCanvas = svg.append('g')
+        mapCanvas.selectAll('path')
+            .data(geoJson)
+            .enter()
+            .append('path')
+            .attr("class","path_geo")
+            .attr("d",geo_generator)
+            .style("fill",function (d){
+                try{
+                    if(election_data[d.name]["dems"][3]<election_data[d.name]["gop"][3]){
+                        return dem_color
+                    }
+                    else{
+                        return gop_color
+                    }
+                }
+                catch (error)
+                {
+                    return "white"
+                }
+            })
+
+
+
+
+    }
+
+
+
+</script>
 </html>

@@ -124,6 +124,9 @@
             catch (error)
             {console.log(error)}})
 
+        console.log(election_data)
+
+        console.log(geoJson)
         let mapCanvas = svg.append('g')
         mapCanvas.selectAll('path')
             .data(geoJson)
